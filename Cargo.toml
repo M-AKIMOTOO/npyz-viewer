@@ -1,0 +1,15 @@
+[package]
+name = "npyz-viewer"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Masanori AKIMOTO <masanori.akimoto.ac@gmail.com>"]
+description = "Standalone GUI and helper tools for viewing NumPy .npy/.npz files"
+readme = "README.md"
+
+[dependencies]
+eframe = { version = "0.32.0", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+ndarray = "0.16.1"
+ndarray-npy = "0.9.1"
+num-complex = "0.4.2"
+rfd = "0.15.4"
