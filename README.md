@@ -1,11 +1,41 @@
 # npyz-viewer
 
-Standalone viewer and helper tools for NumPy `.npy` / `.npz` files.
+Tauri + Rust で動く、NumPy `.npy` / `.npz` ファイル用のデスクトップビューアです。
+フロントエンドに Node.js や npm は不要です。
 
-## Build
+## Features
+
+- `.npy` / `.npz` のファイル選択、ドラッグ＆ドロップ、コマンドライン起動
+- NPZ 内の配列を同じウィンドウで素早く切り替え
+- dtype / shape / 要素数の表示
+- ページング付きテーブル、値検索
+- 数式による計算列（`$1`, `$2`, `sin`, `atan2`, `sqrt`, `pow` など）
+- mean / std / quartile / skew / kurtosis / RMS と Pearson 相関行列
+- line / scatter / histogram / box plot、linear / log 軸
+- 1〜5 次多項式、指数、対数、べき乗 fitting
+- R² / adjusted R² / RMSE / MAE、fitted curve と残差プロット
+- 現在のページを CSV としてクリップボードへコピー
+- bool、整数、float16/32/64、複素数、日時、byte/Unicode、void、scalar structured dtype に対応
+- object dtype は安全のため pickle を実行せず、shape とプレースホルダーを表示
+
+## Run
 
 ```bash
+cargo run --release
 cargo run --release -- /path/to/file.npy
+cargo run --release -- /path/to/file.npz
+```
+
+Linux では Tauri の実行に WebKitGTK 4.1 が必要です。開発パッケージ名は
+Debian/Ubuntu 系では通常 `libwebkit2gtk-4.1-dev` です。
+
+## Test
+
+```bash
+cargo fmt --all -- --check
+cargo check --locked
+cargo test --locked
+node --check ui/app.js
 ```
 
 ## Install scripts
@@ -14,12 +44,10 @@ cargo run --release -- /path/to/file.npy
 - macOS: `./scripts/install_macos_npyz_viewer.sh`
 - Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\install_windows_npyz_viewer.ps1`
 
-## Helper scripts
+## Source layout
 
-- `./npyzviewer.py`
-- `./npyz2txt.py`
-- `./npy2npz.py`
-
-## Assets
-
-- `./assets/npyz-viewer-logo.svg`
+- `src/app.rs`: Tauri commands and application entry point
+- `src/loader.rs`: NPY/NPZ parsing and serialization
+- `ui/`: HTML/CSS/JavaScript frontend
+- `tauri.conf.json`: Tauri window and security configuration
+- `npyzviewer.py`, `npyz2txt.py`, `npy2npz.py`: helper scripts

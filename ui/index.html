@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>npyz-viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div>
+          <h1>npyz-viewer</h1>
+          <p>NumPy data workbench</p>
+        </div>
+      </div>
+      <button id="open-button" class="primary-button">ファイルを開く <kbd>⌘O</kbd></button>
+      <div id="drop-hint" class="drop-hint">.npy / .npz をここへドロップ</div>
+      <div class="sidebar-heading">
+        <span>ARRAYS</span>
+        <span id="entry-count" class="count">0</span>
+      </div>
+      <nav id="entry-list" class="entry-list">
+        <div class="empty-small">NPZ の配列がここに並びます</div>
+      </nav>
+      <div class="sidebar-footer">Tauri + Rust</div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="file-title">
+          <span id="file-name">ファイルを選択してください</span>
+          <span id="file-kind" class="file-kind hidden"></span>
+        </div>
+        <div id="file-path" class="file-path"></div>
+      </header>
+
+      <section id="welcome" class="welcome">
+        <div class="welcome-icon">⌁</div>
+        <h2>NumPy データを、すばやく見る。</h2>
+        <p>配列の確認、検索、列計算、プロットをひとつの画面で。</p>
+        <button id="welcome-open" class="primary-button">.npy / .npz を開く</button>
+        <div class="feature-row">
+          <span>Drag & Drop</span><span>Search</span><span>Calc</span><span>Plot</span><span>CSV</span>
+        </div>
+      </section>
+
+      <section id="viewer" class="viewer hidden">
+        <div class="array-header">
+          <div>
+            <div class="eyebrow">SELECTED ARRAY</div>
+            <h2 id="array-name">—</h2>
+          </div>
+          <div class="metadata">
+            <div><span>dtype</span><strong id="dtype">—</strong></div>
+            <div><span>shape</span><strong id="shape">—</strong></div>
+            <div><span>elements</span><strong id="elements">—</strong></div>
+          </div>
+        </div>
+
+        <div class="toolstrip">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="search-input" type="search" placeholder="値を検索…">
+          </label>
+          <button id="find-button" class="quiet-button">次を検索</button>
+          <span id="search-result" class="tool-status"></span>
+          <div class="tool-spacer"></div>
+          <button id="copy-button" class="quiet-button">CSV をコピー</button>
+        </div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-panel="table-panel">Table</button>
+          <button class="tab" data-panel="stats-panel">Statistics</button>
+          <button class="tab" data-panel="calc-panel">Calc</button>
+          <button class="tab" data-panel="plot-panel">Plot</button>
+          <button class="tab" data-panel="fit-panel">Fit</button>
+        </div>
+
+        <section id="table-panel" class="panel active">
+          <div class="table-shell">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <label>Rows <select id="page-size"><option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+            <span id="row-range">0–0 / 0</span>
+            <button id="prev-page" class="icon-button" aria-label="Previous page">←</button>
+            <span>Page <input id="page-number" type="number" min="1" value="1"> / <span id="page-total">1</span></span>
+            <button id="next-page" class="icon-button" aria-label="Next page">→</button>
+          </div>
+        </section>
+
+        <section id="stats-panel" class="panel">
+          <div class="analysis-scroll">
+            <div id="stats-summary" class="metric-grid"></div>
+            <div class="analysis-card">
+              <div class="card-title">
+                <div><span class="eyebrow">DESCRIPTIVE STATISTICS</span><h3>列ごとの統計量</h3></div>
+                <button id="copy-stats" class="quiet-button">統計量を CSV コピー</button>
+              </div>
+              <p class="help">有限な数値のみを集計します。Std は標本標準偏差、Kurtosis は excess kurtosis です。</p>
+              <div class="stats-table-shell">
+                <table class="stats-table">
+                  <thead><tr><th>Column</th><th>N</th><th>Missing</th><th>Mean</th><th>Std</th><th>Min</th><th>Q1</th><th>Median</th><th>Q3</th><th>Max</th><th>RMS</th><th>Skew</th><th>Kurtosis</th></tr></thead>
+                  <tbody id="stats-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="analysis-card">
+              <div class="card-title">
+                <div><span class="eyebrow">PEARSON CORRELATION</span><h3>相関行列</h3></div>
+                <span id="correlation-note" class="tool-status"></span>
+              </div>
+              <div id="correlation-matrix" class="correlation-shell"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="calc-panel" class="panel">
+          <div class="card calc-card">
+            <div class="card-title">
+              <div><span class="eyebrow">DERIVED COLUMN</span><h3>式から列を追加</h3></div>
+              <button id="clear-calc" class="quiet-button">計算列をクリア</button>
+            </div>
+            <div id="column-reference" class="column-reference"></div>
+            <div class="form-grid">
+              <label>Expression<input id="calc-expression" placeholder="sin($1) + $2 * 0.5"></label>
+              <label>Column name<input id="calc-name" placeholder="Calculated"></label>
+            </div>
+            <div class="calc-actions">
+              <label class="check-label"><input id="degrees" type="checkbox"> 三角関数を度数法で計算</label>
+              <button id="add-column" class="primary-button">列を追加</button>
+            </div>
+            <p class="help">演算子: + − × ÷ ^　関数: sin, cos, tan, asin, acos, atan, atan2, abs, sqrt, exp, pow</p>
+            <div id="calc-status" class="inline-status"></div>
+          </div>
+        </section>
+
+        <section id="plot-panel" class="panel">
+          <div class="plot-toolbar">
+            <label>Type<select id="plot-kind"><option value="line">Line</option><option value="scatter">Scatter</option><option value="hist">Histogram</option><option value="box">Box plot</option></select></label>
+            <label>X / value<select id="plot-x"></select></label>
+            <label id="plot-y-label">Y<select id="plot-y"></select></label>
+            <label id="bins-label" class="hidden">Bins<input id="hist-bins" type="number" min="2" max="200" value="30"></label>
+            <label id="axis-scale-label">Axes<select id="axis-scale"><option value="linear">Linear</option><option value="log-x">Log X</option><option value="log-y">Log Y</option><option value="log-log">Log–Log</option></select></label>
+            <label class="plot-check"><input id="plot-grid" type="checkbox" checked> Grid</label>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="plot-canvas"></canvas>
+            <div id="plot-message" class="plot-message"></div>
+          </div>
+        </section>
+
+        <section id="fit-panel" class="panel">
+          <div class="fit-toolbar">
+            <label>X<select id="fit-x"></select></label>
+            <label>Y<select id="fit-y"></select></label>
+            <label>Model<select id="fit-model">
+              <option value="poly1">Linear</option>
+              <option value="poly2">Polynomial · degree 2</option>
+              <option value="poly3">Polynomial · degree 3</option>
+              <option value="poly4">Polynomial · degree 4</option>
+              <option value="poly5">Polynomial · degree 5</option>
+              <option value="exp">Exponential · a exp(bx)</option>
+              <option value="log">Logarithmic · a + b ln(x)</option>
+              <option value="power">Power · a x^b</option>
+            </select></label>
+            <button id="run-fit" class="primary-button">Fit</button>
+          </div>
+          <div id="fit-empty" class="fit-empty">X・Y とモデルを選んで Fit を実行してください。</div>
+          <div id="fit-results" class="fit-results hidden">
+            <div id="fit-metrics" class="metric-grid compact"></div>
+            <div class="equation-card">
+              <div><span class="eyebrow">FITTED MODEL</span><div id="fit-equation" class="fit-equation"></div></div>
+              <button id="copy-fit" class="quiet-button">結果をコピー</button>
+            </div>
+            <div class="fit-canvases">
+              <div class="fit-canvas-card"><span>Data & fitted curve</span><canvas id="fit-canvas"></canvas></div>
+              <div class="fit-canvas-card"><span>Residuals</span><canvas id="residual-canvas"></canvas></div>
+            </div>
+            <div id="fit-coefficients" class="coefficient-table"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <div id="busy" class="busy hidden"><div class="spinner"></div><span>Loading array…</span></div>
+  <script src="app.js"></script>
+</body>
+</html>
