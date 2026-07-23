@@ -1,7 +1,9 @@
 "use strict";
 
-const invoke = window.__TAURI__.core.invoke;
-const listen = window.__TAURI__.event.listen;
+const tauriApi = window.__TAURI__;
+const isTauri2 = Boolean(tauriApi.core);
+const invoke = (tauriApi.core || tauriApi.tauri).invoke;
+const listen = tauriApi.event.listen;
 
 const state = {
   summary: null,
@@ -95,14 +97,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (error) {
     showToast(String(error), true);
   }
-  listen("tauri://drag-enter", () => document.body.classList.add("dragging")).catch(console.error);
-  listen("tauri://drag-leave", () => document.body.classList.remove("dragging")).catch(console.error);
-  listen("tauri://drag-drop", (event) => {
+  registerFileDropListeners();
+});
+
+function registerFileDropListeners() {
+  const enterEvent = isTauri2 ? "tauri://drag-enter" : "tauri://file-drop-hover";
+  const leaveEvent = isTauri2 ? "tauri://drag-leave" : "tauri://file-drop-cancelled";
+  const dropEvent = isTauri2 ? "tauri://drag-drop" : "tauri://file-drop";
+  listen(enterEvent, () => document.body.classList.add("dragging")).catch(console.error);
+  listen(leaveEvent, () => document.body.classList.remove("dragging")).catch(console.error);
+  listen(dropEvent, (event) => {
     document.body.classList.remove("dragging");
-    const paths = event.payload && event.payload.paths;
+    const paths = Array.isArray(event.payload)
+      ? event.payload
+      : event.payload && event.payload.paths;
     if (Array.isArray(paths) && paths.length > 0) openPath(paths[0]);
   }).catch(console.error);
-});
+}
 
 async function chooseFile() {
   try {

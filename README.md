@@ -29,6 +29,25 @@ cargo run --release -- /path/to/file.npz
 Linux では Tauri の実行に WebKitGTK 4.1 が必要です。開発パッケージ名は
 Debian/Ubuntu 系では通常 `libwebkit2gtk-4.1-dev` です。
 
+Linuxでは、ディストリビューションに合わせてTauri版を自動選択できます。
+
+```bash
+./scripts/build_linux_npyz_viewer.sh
+```
+
+- WebKitGTK 4.1 + GLib 2.70以上: 標準のTauri 2版
+- WebKitGTK 4.0: Rocky/RHEL 8向けTauri 1互換版
+
+Rocky Linux 8では先に次をインストールしてください。
+
+```bash
+sudo dnf install webkit2gtk3-devel gtk3-devel openssl-devel
+sudo dnf group install "Development Tools"
+```
+
+互換版は `src/loader.rs` と `ui/` を標準版と共有し、Tauriランチャーのみ
+`compat/rocky8/` に分離しています。
+
 ## Test
 
 ```bash
@@ -48,6 +67,7 @@ node --check ui/app.js
 
 - `src/app.rs`: Tauri commands and application entry point
 - `src/loader.rs`: NPY/NPZ parsing and serialization
+- `compat/rocky8/`: WebKitGTK 4.0 / Tauri 1 compatibility shell
 - `ui/`: HTML/CSS/JavaScript frontend
 - `tauri.conf.json`: Tauri window and security configuration
 - `npyzviewer.py`, `npyz2txt.py`, `npy2npz.py`: helper scripts
